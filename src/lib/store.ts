@@ -2,10 +2,23 @@ import { create } from 'zustand';
 
 export interface AnalysisResult {
   id: string;
-  client: string;
-  teamMember: string;
-  transcription: string;
-  analysis: {
+  client?: string;
+  teamMember?: string;
+  transcription?: string;
+  title?: string;
+  createdAt?: Date;
+  type?: string;
+  summary?: string[];
+  insights?: string[];
+  recommendations?: string[];
+  metrics?: {
+    score?: number;
+    trend?: string;
+    confidence?: number;
+    sentiment?: string;
+    riskLevel?: string;
+  };
+  analysis?: {
     summary: string[];
     actionItems: string[];
     sentiment: string;
@@ -32,7 +45,7 @@ export interface AnalysisResult {
     opportunities?: string[];
     nextSteps?: string[];
   };
-  timestamp: string;
+  timestamp?: string;
 }
 
 interface StoreState {
@@ -179,14 +192,14 @@ export const useAnalysisStore = create<StoreState>((set, get) => ({
   getAnalysesByClient: (client: string) => {
     const { analyses } = get();
     return analyses.filter(analysis => 
-      analysis.client.toLowerCase().includes(client.toLowerCase())
+      analysis.client?.toLowerCase().includes(client.toLowerCase())
     );
   },
 
   getAnalysesByTeamMember: (teamMember: string) => {
     const { analyses } = get();
     return analyses.filter(analysis => 
-      analysis.teamMember.toLowerCase().includes(teamMember.toLowerCase())
+      analysis.teamMember?.toLowerCase().includes(teamMember.toLowerCase())
     );
   },
 })); 

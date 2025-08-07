@@ -1,58 +1,162 @@
 import { AnalysisResponse } from './openai';
+import { prisma } from './prisma';
 
-// Simple in-memory database (replace with real database in production)
-class InMemoryDatabase {
-  private analyses: AnalysisResponse[] = [];
-  private stats = {
-    totalAnalyses: 0,
-    activeUsers: 12500,
-    salesGrowth: 85,
-    reportsGenerated: 0,
-    responseTime: 95,
-  };
-
+// Database operations using Prisma
+class PrismaDatabase {
   // Analysis operations
   async saveAnalysis(analysis: AnalysisResponse): Promise<AnalysisResponse> {
-    this.analyses.push(analysis);
-    this.stats.totalAnalyses++;
-    this.stats.reportsGenerated++;
-    return analysis;
+    console.log('Database saveAnalysis received:', JSON.stringify(analysis, null, 2));
+    
+    // Validate required fields
+    if (!analysis.type || !analysis.title || !analysis.summary) {
+      console.error('Validation failed:', {
+        type: analysis.type,
+        title: analysis.title,
+        summary: analysis.summary,
+        hasType: !!analysis.type,
+        hasTitle: !!analysis.title,
+        hasSummary: !!analysis.summary
+      });
+      throw new Error('Missing required fields: type, title, and summary are required');
+    }
+
+    const saved = await prisma.analysis.create({
+      data: {
+        id: analysis.id,
+        type: analysis.type,
+        title: analysis.title,
+        summary: Array.isArray(analysis.summary) ? analysis.summary.join(' | ') : analysis.summary,
+        insights: JSON.stringify(analysis.insights || []),
+        recommendations: JSON.stringify(analysis.recommendations || []),
+        metrics: JSON.stringify(analysis.metrics || { score: 0, trend: 'stable', confidence: 0 }),
+        createdAt: analysis.createdAt,
+      },
+    });
+
+    // Update stats
+    await this.updateStatsCount();
+
+    return {
+      ...analysis,
+      createdAt: saved.createdAt,
+    };
   }
 
   async getAnalyses(): Promise<AnalysisResponse[]> {
-    return this.analyses.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const analyses = await prisma.analysis.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return analyses.map(analysis => ({
+      id: analysis.id,
+      type: analysis.type as any,
+      title: analysis.title,
+      summary: analysis.summary.includes(' | ') ? analysis.summary.split(' | ') : [analysis.summary],
+      insights: JSON.parse(analysis.insights),
+      recommendations: JSON.parse(analysis.recommendations),
+      metrics: JSON.parse(analysis.metrics),
+      createdAt: analysis.createdAt,
+    }));
   }
 
   async getAnalysisById(id: string): Promise<AnalysisResponse | null> {
-    return this.analyses.find(a => a.id === id) || null;
+    const analysis = await prisma.analysis.findUnique({
+      where: { id },
+    });
+
+    if (!analysis) return null;
+
+    return {
+      id: analysis.id,
+      type: analysis.type as any,
+      title: analysis.title,
+      summary: analysis.summary.includes(' | ') ? analysis.summary.split(' | ') : [analysis.summary],
+      insights: JSON.parse(analysis.insights),
+      recommendations: JSON.parse(analysis.recommendations),
+      metrics: JSON.parse(analysis.metrics),
+      createdAt: analysis.createdAt,
+    };
   }
 
   async deleteAnalysis(id: string): Promise<boolean> {
-    const index = this.analyses.findIndex(a => a.id === id);
-    if (index > -1) {
-      this.analyses.splice(index, 1);
-      this.stats.totalAnalyses--;
+    try {
+      await prisma.analysis.delete({
+        where: { id },
+      });
+      await this.updateStatsCount();
       return true;
+    } catch {
+      return false;
     }
-    return false;
   }
 
   // Stats operations
   async getStats() {
+    let stats = await prisma.stats.findFirst();
+    
+    if (!stats) {
+      stats = await prisma.stats.create({
+        data: {
+          totalAnalyses: 0,
+          activeUsers: 12500,
+          salesGrowth: 85,
+          reportsGenerated: 0,
+          responseTime: 95,
+        },
+      });
+    }
+
+    const totalAnalyses = await prisma.analysis.count();
+    
     return {
-      ...this.stats,
-      totalAnalyses: this.analyses.length,
-      reportsGenerated: this.analyses.length,
+      totalAnalyses,
+      activeUsers: stats.activeUsers,
+      salesGrowth: stats.salesGrowth,
+      reportsGenerated: totalAnalyses,
+      responseTime: stats.responseTime,
     };
   }
 
-  async updateStats(newStats: Partial<typeof this.stats>) {
-    this.stats = { ...this.stats, ...newStats };
-    return this.stats;
+  async updateStats(newStats: Partial<StatsData>) {
+    let stats = await prisma.stats.findFirst();
+    
+    if (!stats) {
+      stats = await prisma.stats.create({
+        data: {
+          totalAnalyses: 0,
+          activeUsers: 12500,
+          salesGrowth: 85,
+          reportsGenerated: 0,
+          responseTime: 95,
+        },
+      });
+    }
+
+    const updated = await prisma.stats.update({
+      where: { id: stats.id },
+      data: newStats,
+    });
+
+    return updated;
+  }
+
+  private async updateStatsCount() {
+    const totalAnalyses = await prisma.analysis.count();
+    let stats = await prisma.stats.findFirst();
+    
+    if (stats) {
+      await prisma.stats.update({
+        where: { id: stats.id },
+        data: {
+          totalAnalyses,
+          reportsGenerated: totalAnalyses,
+        },
+      });
+    }
   }
 }
 
-export const db = new InMemoryDatabase();
+export const db = new PrismaDatabase();
 
 // Export individual functions for API routes
 export const getAllAnalyses = async () => {
@@ -65,6 +169,10 @@ export const addAnalysis = async (analysis: AnalysisResponse) => {
 
 export const deleteAnalysis = async (id: string) => {
   return await db.deleteAnalysis(id);
+};
+
+export const getAnalysisById = async (id: string) => {
+  return await db.getAnalysisById(id);
 };
 
 export const getAnalysesByFilter = async (filters: any) => {
@@ -83,7 +191,7 @@ export const getAnalysesByFilter = async (filters: any) => {
       const fromDate = new Date(filters.dateFrom);
       if (analysis.createdAt < fromDate) return false;
     }
-  if (filters.dateTo) {
+    if (filters.dateTo) {
       const toDate = new Date(filters.dateTo);
       if (analysis.createdAt > toDate) return false;
     }

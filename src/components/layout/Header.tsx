@@ -16,7 +16,7 @@ export const Header = () => {
         justifyContent: 'space-between',
         padding: '1rem 2rem',
         backgroundColor: colors.background.paper,
-        borderBottom: `1px solid ${colors.divider}`,
+        borderBottom: `1px solid ${colors.grey[800]},`
       }}
     >
       {/* Left side */}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAllAnalyses, addAnalysis, deleteAnalysis, getAnalysesByFilter } from '@/lib/database';
+import { AnalysisResponse } from '@/lib/openai';
 
 // GET - Get all analyses or filtered analyses
 export async function GET(request: NextRequest) {
@@ -33,8 +34,33 @@ export async function GET(request: NextRequest) {
 // POST - Add new analysis
 export async function POST(request: NextRequest) {
   try {
-    const analysis = await request.json();
-    await addAnalysis(analysis);
+    const analysisData = await request.json();
+    
+    console.log('Received analysis data:', JSON.stringify(analysisData, null, 2));
+    
+    // Transform AnalysisResult to AnalysisResponse format
+    const analysisResponse: AnalysisResponse = {
+      id: analysisData.id || `analysis_${Date.now()}`,
+      type: analysisData.type || 'meeting',
+      title: analysisData.title || analysisData.client || 'Meeting Analysis',
+      summary: Array.isArray(analysisData.analysis?.summary) 
+        ? analysisData.analysis.summary.join(' | ') 
+        : analysisData.analysis?.summary || analysisData.summary || 'Analysis completed',
+      insights: analysisData.analysis?.actionItems || analysisData.analysis?.insights || analysisData.insights || [],
+      recommendations: analysisData.analysis?.recommendations || analysisData.recommendations || [],
+      metrics: {
+        score: analysisData.analysis?.healthScore || analysisData.metrics?.score || 0,
+        trend: analysisData.metrics?.trend || 'stable',
+        confidence: analysisData.metrics?.confidence || 0,
+        sentiment: analysisData.analysis?.sentiment || analysisData.metrics?.sentiment || 'neutral',
+        riskLevel: analysisData.analysis?.riskLevel || analysisData.metrics?.riskLevel || 'Low',
+      },
+      createdAt: analysisData.createdAt || new Date(),
+    };
+
+    console.log('Transformed analysis response:', JSON.stringify(analysisResponse, null, 2));
+
+    await addAnalysis(analysisResponse);
     
     return NextResponse.json({ success: true, message: 'Analysis added successfully' });
   } catch (error) {

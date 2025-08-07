@@ -25,12 +25,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('Creating analysis with data:', { type: body.type, title: body.title });
+
     // Generate AI analysis
     const analysis = await generateAnalysis({
       type: body.type,
-      data: body.data,
+      data: body.data || {},
       prompt: body.prompt,
     });
+
+    console.log('Generated analysis:', { id: analysis.id, type: analysis.type, title: analysis.title });
 
     // Save to database
     const savedAnalysis = await db.saveAnalysis(analysis);
@@ -42,7 +46,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Analysis creation error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create analysis' },
+      { success: false, error: error instanceof Error ? error.message : 'Failed to create analysis' },
       { status: 500 }
     );
   }

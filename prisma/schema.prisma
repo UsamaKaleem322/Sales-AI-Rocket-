@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Analysis {
+  id              String   @id @default(cuid())
+  type            String   // 'sales' | 'performance' | 'market' | 'customer'
+  title           String
+  summary         String
+  insights        String   // JSON string for insights array
+  recommendations String   // JSON string for recommendations array
+  metrics         String   // JSON string for metrics object
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("analyses")
+}
+
+model Stats {
+  id               Int @id @default(autoincrement())
+  totalAnalyses    Int @default(0)
+  activeUsers      Int @default(12500)
+  salesGrowth      Int @default(85)
+  reportsGenerated Int @default(0)
+  responseTime     Int @default(95)
+  updatedAt        DateTime @updatedAt
+
+  @@map("stats")
+}

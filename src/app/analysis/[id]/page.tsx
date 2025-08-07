@@ -50,369 +50,371 @@ const TabButton = ({ children, active, onClick }: {
   </Button>
 );
 
-const AnalysisOverview = ({ analysis }: { analysis: AnalysisResult }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    <Box
-      sx={{
-        backgroundColor: colors.background.paper,
-        borderRadius: 2,
-        p: 3,
-        border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-            <Typography variant="h6" sx={{ color: 'text.primary' }}>
-              AI Analysis - {analysis.client}
+const AnalysisOverview = ({ analysis }: { analysis: AnalysisResult }) => {
+  // Handle both data structures
+  const sentiment = analysis.analysis?.sentiment || analysis.metrics?.sentiment || 'neutral';
+  const riskLevel = analysis.analysis?.riskLevel || analysis.metrics?.riskLevel || 'Low';
+  const healthScore = analysis.analysis?.healthScore || analysis.metrics?.score || 0;
+  const client = analysis.client || analysis.title || 'Unknown Client';
+  const teamMember = analysis.teamMember || 'Unknown Team Member';
+  const timestamp = analysis.timestamp || analysis.createdAt || new Date().toISOString();
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Box
+        sx={{
+          backgroundColor: colors.background.paper,
+          borderRadius: 2,
+          p: 3,
+          border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography variant="h6" sx={{ color: 'text.primary' }}>
+                AI Analysis - {client}
+              </Typography>
+              <Chip
+                label={sentiment}
+                size="small"
+                sx={{
+                  backgroundColor: sentiment === 'positive' 
+                    ? alpha(colors.success.main, 0.1)
+                    : sentiment === 'negative'
+                    ? alpha(colors.error.main, 0.1)
+                    : alpha(colors.warning.main, 0.1),
+                  color: sentiment === 'positive'
+                    ? colors.success.main
+                    : sentiment === 'negative'
+                    ? colors.error.main
+                    : colors.warning.main,
+                }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <AccessTimeIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+                <Typography variant="body2" color="text.secondary">
+                  {new Date(timestamp).toLocaleDateString()} • {teamMember}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <GroupIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+                <Typography variant="body2" color="text.secondary">
+                  AI Generated
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Health:
             </Typography>
+            <Typography variant="body1" sx={{ color: colors.success.main, fontWeight: 600 }}>
+              {healthScore}%
+            </Typography>
+            <IconButton size="small">
+              <KeyboardArrowDownIcon />
+            </IconButton>
+          </Box>
+        </Box>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Summary:
+        </Typography>
+        <Box component="ul" sx={{ m: 0, pl: 3, mb: 3 }}>
+          {(analysis.analysis?.summary || analysis.insights || []).map((point, idx) => (
+            <Typography key={idx} component="li" variant="body2" color="text.primary" sx={{ mb: 1 }}>
+              {point}
+            </Typography>
+          ))}
+        </Box>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Key Insights:
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+          {(analysis.analysis?.insights || analysis.insights || []).map((insight, idx) => (
             <Chip
-              label={analysis.analysis.sentiment}
+              key={idx}
+              label={insight}
               size="small"
               sx={{
-                backgroundColor: analysis.analysis.sentiment === 'positive' 
-                  ? alpha(colors.success.main, 0.1)
-                  : analysis.analysis.sentiment === 'negative'
-                  ? alpha(colors.error.main, 0.1)
-                  : alpha(colors.warning.main, 0.1),
-                color: analysis.analysis.sentiment === 'positive'
-                  ? colors.success.main
-                  : analysis.analysis.sentiment === 'negative'
-                  ? colors.error.main
-                  : colors.warning.main,
+                backgroundColor: alpha(colors.primary.main, 0.1),
+                color: colors.primary.main,
+                borderRadius: 1,
               }}
             />
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <AccessTimeIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-              <Typography variant="body2" color="text.secondary">
-                {new Date(analysis.timestamp).toLocaleDateString()} • {analysis.teamMember}
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <GroupIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-              <Typography variant="body2" color="text.secondary">
-                AI Generated
-              </Typography>
-            </Box>
-          </Box>
+          ))}
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            Health:
-          </Typography>
-          <Typography variant="body1" sx={{ color: colors.success.main, fontWeight: 600 }}>
-            {analysis.analysis.healthScore}%
-          </Typography>
-          <IconButton size="small">
-            <KeyboardArrowDownIcon />
-          </IconButton>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Recommendations:
+        </Typography>
+        <Box component="ul" sx={{ m: 0, pl: 3 }}>
+          {(analysis.analysis?.recommendations || analysis.recommendations || []).map((rec, idx) => (
+            <Typography key={idx} component="li" variant="body2" color="text.primary" sx={{ mb: 1 }}>
+              {rec}
+            </Typography>
+          ))}
         </Box>
       </Box>
+    </Box>
+  );
+};
 
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Summary:
+const SentimentAnalysis = ({ analysis }: { analysis: AnalysisResult }) => {
+  // Handle both data structures
+  const sentiment = analysis.analysis?.sentiment || analysis.metrics?.sentiment || 'neutral';
+  const summary = analysis.analysis?.summary || analysis.insights || [];
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
+        Sentiment Analysis
       </Typography>
-      <Box component="ul" sx={{ m: 0, pl: 3, mb: 3 }}>
-        {analysis.analysis.summary.map((point, idx) => (
-          <Typography key={idx} component="li" variant="body2" color="text.primary" sx={{ mb: 1 }}>
-            {point}
+      <Box
+        sx={{
+          backgroundColor: colors.background.paper,
+          borderRadius: 2,
+          p: 3,
+          border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6" sx={{ color: 'text.primary' }}>
+            Overall Sentiment
           </Typography>
-        ))}
-      </Box>
+          <Chip
+            label={sentiment}
+            size="medium"
+            sx={{
+              backgroundColor: sentiment === 'positive' 
+                ? alpha(colors.success.main, 0.1)
+                : sentiment === 'negative'
+                ? alpha(colors.error.main, 0.1)
+                : alpha(colors.warning.main, 0.1),
+              color: sentiment === 'positive'
+                ? colors.success.main
+                : sentiment === 'negative'
+                ? colors.error.main
+                : colors.warning.main,
+              fontWeight: 600,
+              fontSize: '1rem',
+            }}
+          />
+        </Box>
 
-      {analysis.analysis.actionItems.length > 0 && (
-        <>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Action Items:
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Sentiment Score
           </Typography>
-          <Box component="ul" sx={{ m: 0, pl: 3, mb: 3 }}>
-            {analysis.analysis.actionItems.map((item, idx) => (
-              <Typography key={idx} component="li" variant="body2" color="text.primary" sx={{ mb: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h4" sx={{ color: colors.success.main, fontWeight: 600 }}>
+              {sentiment === 'positive' ? 85 : sentiment === 'negative' ? 35 : 65}%
+            </Typography>
+            <Box sx={{ flex: 1, height: 8, backgroundColor: alpha(colors.success.main, 0.1), borderRadius: 4, overflow: 'hidden' }}>
+              <Box
+                sx={{
+                  width: `${sentiment === 'positive' ? 85 : sentiment === 'negative' ? 35 : 65}%`,
+                  height: '100%',
+                  backgroundColor: sentiment === 'positive' ? colors.success.main : 
+                                 sentiment === 'negative' ? colors.error.main : colors.warning.main,
+                  borderRadius: 4,
+                }}
+              />
+            </Box>
+          </Box>
+        </Box>
+
+        <Typography variant="body2" color="text.secondary">
+          The AI analysis indicates a {sentiment} sentiment throughout the meeting, 
+          with key points focusing on {Array.isArray(summary) && summary.length > 0 ? summary.slice(0, 2).join(' and ') : 'various topics'}.
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
+const RiskAssessment = ({ analysis }: { analysis: AnalysisResult }) => {
+  // Handle both data structures
+  const riskLevel = analysis.analysis?.riskLevel || analysis.metrics?.riskLevel || 'Low';
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
+        Risk Assessment
+      </Typography>
+      <Box
+        sx={{
+          backgroundColor: colors.background.paper,
+          borderRadius: 2,
+          p: 3,
+          border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h6" sx={{ color: 'text.primary' }}>
+            Risk Level
+          </Typography>
+          <Chip
+            label={riskLevel}
+            size="medium"
+            sx={{
+              backgroundColor: riskLevel === 'High' 
+                ? alpha(colors.error.main, 0.1)
+                : riskLevel === 'Medium'
+                ? alpha(colors.warning.main, 0.1)
+                : alpha(colors.success.main, 0.1),
+              color: riskLevel === 'High'
+                ? colors.error.main
+                : riskLevel === 'Medium'
+                ? colors.warning.main
+                : colors.success.main,
+              fontWeight: 600,
+              fontSize: '1rem',
+            }}
+          />
+        </Box>
+
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Risk Score
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Typography variant="h4" sx={{ 
+              color: riskLevel === 'High' ? colors.error.main : 
+                     riskLevel === 'Medium' ? colors.warning.main : colors.success.main, 
+              fontWeight: 600 
+            }}>
+              {riskLevel === 'High' ? 85 : riskLevel === 'Medium' ? 55 : 25}%
+            </Typography>
+            <Box sx={{ flex: 1, height: 8, backgroundColor: alpha(colors.grey[700], 0.2), borderRadius: 4, overflow: 'hidden' }}>
+              <Box
+                sx={{
+                  width: `${riskLevel === 'High' ? 85 : riskLevel === 'Medium' ? 55 : 25}%`,
+                  height: '100%',
+                  backgroundColor: riskLevel === 'High' ? colors.error.main : 
+                                 riskLevel === 'Medium' ? colors.warning.main : colors.success.main,
+                  borderRadius: 4,
+                }}
+              />
+            </Box>
+          </Box>
+        </Box>
+
+        <Typography variant="body2" color="text.secondary">
+          The AI analysis indicates a {riskLevel.toLowerCase()} risk level for this meeting, 
+          requiring {riskLevel === 'High' ? 'immediate attention' : riskLevel === 'Medium' ? 'monitoring' : 'standard follow-up'}.
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
+const ActionItems = ({ analysis }: { analysis: AnalysisResult }) => {
+  // Handle both data structures
+  const actionItems = analysis.analysis?.actionItems || analysis.insights || [];
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
+        Action Items
+      </Typography>
+      <Box
+        sx={{
+          backgroundColor: colors.background.paper,
+          borderRadius: 2,
+          p: 3,
+          border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
+        }}
+      >
+        {Array.isArray(actionItems) && actionItems.length > 0 ? (
+          <Box component="ul" sx={{ m: 0, pl: 3 }}>
+            {actionItems.map((item, idx) => (
+              <Typography key={idx} component="li" variant="body2" color="text.primary" sx={{ mb: 2 }}>
                 {item}
               </Typography>
             ))}
           </Box>
-        </>
-      )}
-
-      {analysis.analysis.recommendations.length > 0 && (
-        <>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Recommendations:
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            No specific action items identified in this analysis.
           </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+};
+
+const Recommendations = ({ analysis }: { analysis: AnalysisResult }) => {
+  // Handle both data structures
+  const recommendations = analysis.analysis?.recommendations || analysis.recommendations || [];
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
+        Recommendations
+      </Typography>
+      <Box
+        sx={{
+          backgroundColor: colors.background.paper,
+          borderRadius: 2,
+          p: 3,
+          border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
+        }}
+      >
+        {Array.isArray(recommendations) && recommendations.length > 0 ? (
           <Box component="ul" sx={{ m: 0, pl: 3 }}>
-            {analysis.analysis.recommendations.map((rec, idx) => (
-              <Typography key={idx} component="li" variant="body2" color="text.primary" sx={{ mb: 1 }}>
+            {recommendations.map((rec, idx) => (
+              <Typography key={idx} component="li" variant="body2" color="text.primary" sx={{ mb: 2 }}>
                 {rec}
               </Typography>
             ))}
           </Box>
-        </>
-      )}
-    </Box>
-  </Box>
-);
-
-const SentimentAnalysis = ({ analysis }: { analysis: AnalysisResult }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
-      Sentiment Analysis
-    </Typography>
-    <Box
-      sx={{
-        backgroundColor: colors.background.paper,
-        borderRadius: 2,
-        p: 3,
-        border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6" sx={{ color: 'text.primary' }}>
-          Overall Sentiment
-        </Typography>
-        <Chip
-          label={analysis.analysis.sentiment}
-          size="medium"
-          sx={{
-            backgroundColor: analysis.analysis.sentiment === 'positive' 
-              ? alpha(colors.success.main, 0.1)
-              : analysis.analysis.sentiment === 'negative'
-              ? alpha(colors.error.main, 0.1)
-              : alpha(colors.warning.main, 0.1),
-            color: analysis.analysis.sentiment === 'positive'
-              ? colors.success.main
-              : analysis.analysis.sentiment === 'negative'
-              ? colors.error.main
-              : colors.warning.main,
-            fontWeight: 600,
-            fontSize: '1rem',
-          }}
-        />
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Sentiment Score
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Typography variant="h4" sx={{ color: colors.success.main, fontWeight: 600 }}>
-            {analysis.analysis.sentiment === 'positive' ? 85 : analysis.analysis.sentiment === 'negative' ? 35 : 65}%
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            No specific recommendations available for this analysis.
           </Typography>
-          <Box sx={{ flex: 1, height: 8, backgroundColor: alpha(colors.success.main, 0.1), borderRadius: 4, overflow: 'hidden' }}>
-            <Box
-              sx={{
-                width: `${analysis.analysis.sentiment === 'positive' ? 85 : analysis.analysis.sentiment === 'negative' ? 35 : 65}%`,
-                height: '100%',
-                backgroundColor: analysis.analysis.sentiment === 'positive' ? colors.success.main : 
-                               analysis.analysis.sentiment === 'negative' ? colors.error.main : colors.warning.main,
-                borderRadius: 4,
-              }}
-            />
-          </Box>
-        </Box>
+        )}
       </Box>
-
-      <Typography variant="body2" color="text.secondary">
-        The AI analysis indicates a {analysis.analysis.sentiment} sentiment throughout the meeting, 
-        with key points focusing on {analysis.analysis.summary.slice(0, 2).join(' and ')}.
-      </Typography>
     </Box>
-  </Box>
-);
-
-const RiskAssessment = ({ analysis }: { analysis: AnalysisResult }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
-      Risk Assessment
-    </Typography>
-    <Box
-      sx={{
-        backgroundColor: colors.background.paper,
-        borderRadius: 2,
-        p: 3,
-        border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6" sx={{ color: 'text.primary' }}>
-          Risk Level
-        </Typography>
-        <Chip
-          label={analysis.analysis.riskLevel}
-          size="medium"
-          sx={{
-            backgroundColor: analysis.analysis.riskLevel === 'High' 
-              ? alpha(colors.error.main, 0.1)
-              : analysis.analysis.riskLevel === 'Medium'
-              ? alpha(colors.warning.main, 0.1)
-              : alpha(colors.success.main, 0.1),
-            color: analysis.analysis.riskLevel === 'High'
-              ? colors.error.main
-              : analysis.analysis.riskLevel === 'Medium'
-              ? colors.warning.main
-              : colors.success.main,
-            fontWeight: 600,
-            fontSize: '1rem',
-          }}
-        />
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Risk Factors Identified
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {analysis.analysis.riskLevel === 'High' && (
-            <>
-              <Typography variant="body2" color="text.primary">• Potential scope creep identified</Typography>
-              <Typography variant="body2" color="text.primary">• Timeline concerns raised</Typography>
-              <Typography variant="body2" color="text.primary">• Resource allocation issues</Typography>
-            </>
-          )}
-          {analysis.analysis.riskLevel === 'Medium' && (
-            <>
-              <Typography variant="body2" color="text.primary">• Minor timeline adjustments needed</Typography>
-              <Typography variant="body2" color="text.primary">• Communication improvements suggested</Typography>
-            </>
-          )}
-          {analysis.analysis.riskLevel === 'Low' && (
-            <>
-              <Typography variant="body2" color="text.primary">• Project on track</Typography>
-              <Typography variant="body2" color="text.primary">• Clear communication established</Typography>
-            </>
-          )}
-        </Box>
-      </Box>
-
-      <Typography variant="body2" color="text.secondary">
-        Based on the meeting content, the AI has identified a {analysis.analysis.riskLevel.toLowerCase()} risk level 
-        with {analysis.analysis.actionItems.length} actionable items to address.
-      </Typography>
-    </Box>
-  </Box>
-);
-
-const ActionItems = ({ analysis }: { analysis: AnalysisResult }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
-      Action Items
-    </Typography>
-    {analysis.analysis.actionItems.length === 0 ? (
-      <Box
-        sx={{
-          backgroundColor: colors.background.paper,
-          borderRadius: 2,
-          p: 4,
-          border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
-          textAlign: 'center',
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          No action items identified in this analysis.
-        </Typography>
-      </Box>
-    ) : (
-      analysis.analysis.actionItems.map((item, index) => (
-        <Box
-          key={index}
-          sx={{
-            backgroundColor: colors.background.paper,
-            borderRadius: 2,
-            p: 3,
-            border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-            <Box>
-              <Typography variant="body1" color="text.primary" sx={{ mb: 1 }}>
-                {item}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Assigned: {analysis.teamMember}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Due: {new Date(analysis.timestamp).toLocaleDateString()}
-                </Typography>
-              </Box>
-            </Box>
-            <Chip
-              label="Pending"
-              size="small"
-              sx={{
-                backgroundColor: alpha(colors.warning.main, 0.1),
-                color: colors.warning.main,
-              }}
-            />
-          </Box>
-        </Box>
-      ))
-    )}
-  </Box>
-);
-
-const Recommendations = ({ analysis }: { analysis: AnalysisResult }) => (
-  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-    <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
-      AI Recommendations
-    </Typography>
-    {analysis.analysis.recommendations.length === 0 ? (
-      <Box
-        sx={{
-          backgroundColor: colors.background.paper,
-          borderRadius: 2,
-          p: 4,
-          border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
-          textAlign: 'center',
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          No specific recommendations generated for this analysis.
-        </Typography>
-      </Box>
-    ) : (
-      analysis.analysis.recommendations.map((rec, index) => (
-        <Box
-          key={index}
-          sx={{
-            backgroundColor: colors.background.paper,
-            borderRadius: 2,
-            p: 3,
-            border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
-          }}
-        >
-          <Typography variant="body1" color="text.primary" sx={{ mb: 2 }}>
-            {rec}
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AnalyticsIcon sx={{ color: colors.primary.main, fontSize: 18 }} />
-            <Typography variant="body2" color="text.secondary">
-              AI Generated Recommendation
-            </Typography>
-          </Box>
-        </Box>
-      ))
-    )}
-  </Box>
-);
+  );
+};
 
 export default function AnalysisDetailPage() {
   const router = useRouter();
-  const params = useParams();
+  const { id } = useParams();
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
-  const { analyses, loadAnalyses } = useAnalysisStore();
 
-  // Get the specific analysis by ID
-  const analysis = analyses.find(a => a.id === params.id);
-
-  // Load analyses if not already loaded
   useEffect(() => {
-    if (analyses.length === 0) {
-      loadAnalyses();
+    const fetchAnalysis = async () => {
+      try {
+        const response = await fetch(`/api/analysis/${id}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setAnalysis(result.data);
+          } else {
+            console.error('Failed to fetch analysis:', result.error);
+          }
+        } else {
+          console.error('Failed to fetch analysis:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Failed to fetch analysis:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchAnalysis();
     }
-  }, [analyses.length, loadAnalyses]);
+  }, [id]);
 
   const renderContent = () => {
     if (!analysis) {
@@ -456,6 +458,14 @@ export default function AnalysisDetailPage() {
     );
   }
 
+  // Handle both data structures for the header
+  const sentiment = analysis.analysis?.sentiment || analysis.metrics?.sentiment || 'neutral';
+  const riskLevel = analysis.analysis?.riskLevel || analysis.metrics?.riskLevel || 'Low';
+  const healthScore = analysis.analysis?.healthScore || analysis.metrics?.score || 0;
+  const client = analysis.client || analysis.title || 'Unknown Client';
+  const teamMember = analysis.teamMember || 'Unknown Team Member';
+  const timestamp = analysis.timestamp || analysis.createdAt || new Date().toISOString();
+
   return (
     <Layout>
       <Box sx={{ backgroundColor: colors.background.default, minHeight: '100vh' }}>
@@ -488,34 +498,34 @@ export default function AnalysisDetailPage() {
                         AI Analysis Details
                       </Typography>
                       <Chip
-                        label={analysis.analysis.sentiment}
+                        label={sentiment}
                         size="small"
                         sx={{
-                          backgroundColor: analysis.analysis.sentiment === 'positive' 
+                          backgroundColor: sentiment === 'positive' 
                             ? alpha(colors.success.main, 0.1)
-                            : analysis.analysis.sentiment === 'negative'
+                            : sentiment === 'negative'
                             ? alpha(colors.error.main, 0.1)
                             : alpha(colors.warning.main, 0.1),
-                          color: analysis.analysis.sentiment === 'positive'
+                          color: sentiment === 'positive'
                             ? colors.success.main
-                            : analysis.analysis.sentiment === 'negative'
+                            : sentiment === 'negative'
                             ? colors.error.main
                             : colors.warning.main,
                           borderRadius: 1,
                         }}
                       />
                       <Chip
-                        label={analysis.analysis.riskLevel}
+                        label={riskLevel}
                         size="small"
                         sx={{
-                          backgroundColor: analysis.analysis.riskLevel === 'High' 
+                          backgroundColor: riskLevel === 'High' 
                             ? alpha(colors.error.main, 0.1)
-                            : analysis.analysis.riskLevel === 'Medium'
+                            : riskLevel === 'Medium'
                             ? alpha(colors.warning.main, 0.1)
                             : alpha(colors.success.main, 0.1),
-                          color: analysis.analysis.riskLevel === 'High'
+                          color: riskLevel === 'High'
                             ? colors.error.main
-                            : analysis.analysis.riskLevel === 'Medium'
+                            : riskLevel === 'Medium'
                             ? colors.warning.main
                             : colors.success.main,
                           borderRadius: 1,
@@ -523,12 +533,12 @@ export default function AnalysisDetailPage() {
                       />
                     </Box>
                     <Typography variant="body2" color="text.secondary">
-                      {analysis.client} • {analysis.teamMember} • {new Date(analysis.timestamp).toLocaleDateString()}
+                      {client} • {teamMember} • {new Date(timestamp).toLocaleDateString()}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Typography variant="h5" sx={{ color: colors.primary.main, fontWeight: 600 }}>
-                      {analysis.analysis.healthScore}%
+                      {healthScore}%
                     </Typography>
                     <Button
                       variant="contained"
@@ -584,7 +594,7 @@ export default function AnalysisDetailPage() {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="h4" sx={{ color: colors.success.main, fontWeight: 600 }}>
-                        {analysis.analysis.healthScore}%
+                        {healthScore}%
                       </Typography>
                       <Box
                         sx={{
@@ -597,7 +607,7 @@ export default function AnalysisDetailPage() {
                       >
                         <Box
                           sx={{
-                            width: `${analysis.analysis.healthScore}%`,
+                            width: `${healthScore}%`,
                             height: '100%',
                             backgroundColor: colors.success.main,
                             borderRadius: 4,
@@ -612,7 +622,7 @@ export default function AnalysisDetailPage() {
                       Sentiment
                     </Typography>
                     <Typography variant="body1" color="text.primary">
-                      {analysis.analysis.sentiment}
+                      {sentiment}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       AI Analysis
@@ -624,7 +634,7 @@ export default function AnalysisDetailPage() {
                       Action Items
                     </Typography>
                     <Typography variant="h6" color="text.primary">
-                      {analysis.analysis.actionItems.length}
+                      {analysis.analysis?.actionItems?.length || analysis.insights?.length}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Identified
@@ -636,7 +646,7 @@ export default function AnalysisDetailPage() {
                       Risk Level
                     </Typography>
                     <Typography variant="h6" color="text.primary">
-                      {analysis.analysis.riskLevel}
+                      {riskLevel}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Assessment

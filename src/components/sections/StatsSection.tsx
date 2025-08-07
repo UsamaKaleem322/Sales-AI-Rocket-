@@ -13,6 +13,11 @@ import {
   Tabs,
   Tab,
   alpha,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import {
   Groups as GroupsIcon,
@@ -27,6 +32,8 @@ import {
   AccessTime as AccessTimeIcon,
   Star as StarIcon,
   TrendingDown as TrendingDownIcon,
+  Delete as DeleteIcon,
+  Chat as ChatIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -105,106 +112,31 @@ const TeamMemberCard = ({ name, role, performance, meetings, healthScore, trend 
       },
     }}
   >
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-      <Box>
-        <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600, mb: 0.5 }}>
-          {name}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          {role}
-        </Typography>
-        <Chip
-          label={performance}
-          size="small"
-          sx={{
-            backgroundColor: performance === 'Excellent' ? alpha(colors.success.main, 0.1) : 
-                           performance === 'Good' ? alpha(colors.warning.main, 0.1) : 
-                           alpha(colors.error.main, 0.1),
-            color: performance === 'Excellent' ? colors.success.main : 
-                   performance === 'Good' ? colors.warning.main : 
-                   colors.error.main,
-            fontWeight: 500,
-          }}
-        />
-      </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        {trend === 'up' && <TrendingUpIcon sx={{ color: colors.success.main, fontSize: 20 }} />}
-        {trend === 'down' && <TrendingDownIcon sx={{ color: colors.error.main, fontSize: 20 }} />}
-        {trend === 'stable' && <AccessTimeIcon sx={{ color: colors.warning.main, fontSize: 20 }} />}
-      </Box>
-    </Box>
-
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-      <Box>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Meetings
-        </Typography>
-        <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
-          {meetings}
-        </Typography>
-          </Box>
-      <Box>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
-          Health Score
-        </Typography>
-        <Typography variant="h6" sx={{ color: colors.success.main, fontWeight: 600 }}>
-          {healthScore}%
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <PeopleIcon sx={{ color: colors.primary.main, fontSize: 20 }} />
+        <Box>
+          <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600, mb: 0.5 }}>
+            {name}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {role}
           </Typography>
         </Box>
-    </Box>
-
-    <Box sx={{ width: '100%', height: 6, backgroundColor: alpha(colors.success.main, 0.1), borderRadius: 3, overflow: 'hidden' }}>
-      <Box
-        sx={{
-          width: `${healthScore}%`,
-          height: '100%',
-          backgroundColor: colors.success.main,
-          borderRadius: 3,
-          transition: 'width 0.3s ease-in-out',
-        }}
-      />
-    </Box>
-  </Paper>
-);
-
-// AnalysisCard component
-const AnalysisCard = ({ analysis }: { analysis: AnalysisResult }) => (
-  <Paper
-    sx={{
-      p: 3,
-      background: `linear-gradient(135deg, ${alpha(colors.background.paper, 0.8)} 0%, ${alpha(colors.background.paper, 0.6)} 100%)`,
-      border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
-      borderRadius: 3,
-      transition: 'all 0.3s ease-in-out',
-      '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: `0 8px 25px ${alpha(colors.primary.main, 0.15)}`,
-        borderColor: colors.primary.main,
-      },
-    }}
-  >
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-      <Box>
-        <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600, mb: 0.5 }}>
-          {analysis.client}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {analysis.teamMember}
-        </Typography>
       </Box>
       <Chip
-        label={analysis.analysis.sentiment}
+        label={performance}
         size="small"
         sx={{
-          backgroundColor: analysis.analysis.sentiment === 'positive' 
+          backgroundColor: performance === 'Excellent' 
             ? alpha(colors.success.main, 0.1)
-            : analysis.analysis.sentiment === 'negative'
-            ? alpha(colors.error.main, 0.1)
+            : performance === 'Good'
+            ? alpha(colors.primary.main, 0.1)
             : alpha(colors.warning.main, 0.1),
-          color: analysis.analysis.sentiment === 'positive'
+          color: performance === 'Excellent'
             ? colors.success.main
-            : analysis.analysis.sentiment === 'negative'
-            ? colors.error.main
+            : performance === 'Good'
+            ? colors.primary.main
             : colors.warning.main,
           fontWeight: 500,
         }}
@@ -217,12 +149,12 @@ const AnalysisCard = ({ analysis }: { analysis: AnalysisResult }) => (
       </Typography>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Typography variant="h6" sx={{ color: colors.success.main, fontWeight: 600 }}>
-          {analysis.analysis.healthScore}%
+          {healthScore}%
         </Typography>
         <Box sx={{ flex: 1, height: 6, backgroundColor: alpha(colors.success.main, 0.1), borderRadius: 3, overflow: 'hidden' }}>
           <Box
             sx={{
-              width: `${analysis.analysis.healthScore}%`,
+              width: `${healthScore}%`,
               height: '100%',
               backgroundColor: colors.success.main,
               borderRadius: 3,
@@ -230,46 +162,177 @@ const AnalysisCard = ({ analysis }: { analysis: AnalysisResult }) => (
           />
         </Box>
       </Box>
-        </Box>
-        
-    <Box sx={{ mb: 2 }}>
-      <Typography variant="body2" color="text.secondary" gutterBottom>
-        Key Points
-      </Typography>
-      <Typography variant="body2" color="text.primary" sx={{ mb: 1 }}>
-        {analysis.analysis.summary[0]}
-      </Typography>
-      {analysis.analysis.summary.length > 1 && (
-        <Typography variant="body2" color="text.secondary">
-          +{analysis.analysis.summary.length - 1} more points
-        </Typography>
-      )}
     </Box>
 
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Typography variant="body2" color="text.secondary">
-        {new Date(analysis.timestamp).toLocaleDateString()}
-      </Typography>
-      <Chip
-        label={analysis.analysis.riskLevel}
-        size="small"
-        sx={{
-          backgroundColor: analysis.analysis.riskLevel === 'High' 
-            ? alpha(colors.error.main, 0.1)
-            : analysis.analysis.riskLevel === 'Medium'
-            ? alpha(colors.warning.main, 0.1)
-            : alpha(colors.success.main, 0.1),
-          color: analysis.analysis.riskLevel === 'High'
-            ? colors.error.main
-            : analysis.analysis.riskLevel === 'Medium'
-            ? colors.warning.main
-            : colors.success.main,
-          fontWeight: 500,
-        }}
-      />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <ChatIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
+        <Typography variant="body2" color="text.secondary">
+          {meetings} meetings
+        </Typography>
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {trend === 'up' && <TrendingUpIcon sx={{ color: colors.success.main, fontSize: 20 }} />}
+        {trend === 'down' && <TrendingDownIcon sx={{ color: colors.error.main, fontSize: 20 }} />}
+        {trend === 'stable' && <AccessTimeIcon sx={{ color: colors.warning.main, fontSize: 20 }} />}
+      </Box>
     </Box>
   </Paper>
 );
+
+// AnalysisCard component
+const AnalysisCard = ({ analysis, onDelete }: { analysis: AnalysisResult; onDelete?: (id: string) => void }) => {
+  const router = useRouter();
+  
+  // Handle both data structures
+  const sentiment = analysis.analysis?.sentiment || analysis.metrics?.sentiment || 'neutral';
+  const healthScore = analysis.analysis?.healthScore || analysis.metrics?.score || 0;
+  const riskLevel = analysis.analysis?.riskLevel || analysis.metrics?.riskLevel || 'Low';
+  const summary = analysis.analysis?.summary || analysis.insights || [];
+  const client = analysis.client || analysis.title || 'Unknown Client';
+  const teamMember = analysis.teamMember || 'Unknown Team Member';
+  const timestamp = analysis.timestamp || analysis.createdAt || new Date().toISOString();
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(analysis.id);
+    }
+  };
+
+  const handleCardClick = () => {
+    // Navigate to analysis detail page using Next.js router
+    router.push(`/analysis/${analysis.id}`);
+  };
+
+  return (
+    <Paper
+      sx={{
+        p: 3,
+        background: `linear-gradient(135deg, ${alpha(colors.background.paper, 0.8)} 0%, ${alpha(colors.background.paper, 0.6)} 100%)`,
+        border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
+        borderRadius: 3,
+        transition: 'all 0.3s ease-in-out',
+        cursor: 'pointer',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: `0 8px 25px ${alpha(colors.primary.main, 0.15)}`,
+          borderColor: colors.primary.main,
+        },
+      }}
+      onClick={handleCardClick}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AnalyticsIcon sx={{ color: colors.primary.main, fontSize: 20 }} />
+          <Box>
+            <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600, mb: 0.5 }}>
+              {client}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {teamMember}
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Chip
+            label={sentiment}
+            size="small"
+            sx={{
+              backgroundColor: sentiment === 'positive' 
+                ? alpha(colors.success.main, 0.1)
+                : sentiment === 'negative'
+                ? alpha(colors.error.main, 0.1)
+                : alpha(colors.warning.main, 0.1),
+              color: sentiment === 'positive'
+                ? colors.success.main
+                : sentiment === 'negative'
+                ? colors.error.main
+                : colors.warning.main,
+              fontWeight: 500,
+            }}
+          />
+          {onDelete && (
+            <IconButton
+              size="small"
+              onClick={handleDelete}
+              sx={{
+                color: 'text.secondary',
+                '&:hover': {
+                  backgroundColor: alpha(colors.error.main, 0.1),
+                  color: colors.error.main,
+                },
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
+      </Box>
+
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Health Score
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="h6" sx={{ color: colors.success.main, fontWeight: 600 }}>
+            {healthScore}%
+          </Typography>
+          <Box sx={{ flex: 1, height: 6, backgroundColor: alpha(colors.success.main, 0.1), borderRadius: 3, overflow: 'hidden' }}>
+            <Box
+              sx={{
+                width: `${healthScore}%`,
+                height: '100%',
+                backgroundColor: colors.success.main,
+                borderRadius: 3,
+              }}
+            />
+          </Box>
+        </Box>
+      </Box>
+        
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          Key Points
+        </Typography>
+        <Typography variant="body2" color="text.primary" sx={{ mb: 1 }}>
+          {Array.isArray(summary) && summary.length > 0 ? summary[0] : 'No summary available'}
+        </Typography>
+        {Array.isArray(summary) && summary.length > 1 && (
+          <Typography variant="body2" color="text.secondary">
+            +{summary.length - 1} more points
+          </Typography>
+        )}
+      </Box>
+
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AccessTimeIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
+          <Typography variant="body2" color="text.secondary">
+            {new Date(timestamp).toLocaleDateString()}
+          </Typography>
+        </Box>
+        <Chip
+          label={riskLevel}
+          size="small"
+          sx={{
+            backgroundColor: riskLevel === 'High' 
+              ? alpha(colors.error.main, 0.1)
+              : riskLevel === 'Medium'
+              ? alpha(colors.warning.main, 0.1)
+              : alpha(colors.success.main, 0.1),
+            color: riskLevel === 'High'
+              ? colors.error.main
+              : riskLevel === 'Medium'
+              ? colors.warning.main
+              : colors.success.main,
+            fontWeight: 500,
+          }}
+        />
+      </Box>
+    </Paper>
+  );
+};
 
 // Team member data
 const teamMembers = [
@@ -311,8 +374,10 @@ export default function StatsSection() {
   const router = useRouter();
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [analysisToDelete, setAnalysisToDelete] = useState<string | null>(null);
   const [view, setView] = useState('team');
-  const { addAnalysis, analyses, loadAnalyses, isLoading, error, filters } = useAnalysisStore();
+  const { addAnalysis, analyses, loadAnalyses, isLoading, error, filters, deleteAnalysis } = useAnalysisStore();
 
   // Load analyses on component mount
   useEffect(() => {
@@ -339,7 +404,13 @@ export default function StatsSection() {
     // Add the analysis to the store (which will save to database)
     const analysisResult: AnalysisResult = {
       id: Date.now().toString(),
-      ...analysisData,
+      type: 'meeting', // Add required type field
+      title: analysisData.client || 'Meeting Analysis', // Add required title field
+      client: analysisData.client,
+      teamMember: analysisData.teamMember,
+      transcription: analysisData.transcription,
+      analysis: analysisData.analysis,
+      timestamp: analysisData.timestamp,
     };
     await addAnalysis(analysisResult);
     
@@ -348,6 +419,31 @@ export default function StatsSection() {
     
     // Show success message (you could add a toast notification here)
     console.log('Analysis completed:', analysisResult);
+  };
+
+  const handleDeleteAnalysis = async (id: string) => {
+    setAnalysisToDelete(id);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (analysisToDelete) {
+      try {
+        await deleteAnalysis(analysisToDelete);
+        // Reload analyses to get the latest data
+        await loadAnalyses();
+        console.log('Analysis deleted successfully');
+      } catch (error) {
+        console.error('Failed to delete analysis:', error);
+      }
+    }
+    setIsDeleteDialogOpen(false);
+    setAnalysisToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteDialogOpen(false);
+    setAnalysisToDelete(null);
   };
 
   const handleCardClick = (id: string) => {
@@ -365,9 +461,41 @@ export default function StatsSection() {
 
   // Calculate dashboard stats from real data
   const totalAnalyses = analyses.length;
-  const positiveAnalyses = analyses.filter(a => a.analysis.sentiment === 'positive').length;
-  const highRiskAnalyses = analyses.filter(a => a.analysis.riskLevel === 'High').length;
-  const totalActionItems = analyses.reduce((sum, a) => sum + a.analysis.actionItems.length, 0);
+  const positiveAnalyses = analyses.filter(a => {
+    // Handle both data structures
+    if (a.analysis && a.analysis.sentiment) {
+      return a.analysis.sentiment === 'positive';
+    }
+    // For database structure, check if sentiment exists in metrics
+    if (a.metrics && a.metrics.sentiment) {
+      return a.metrics.sentiment === 'positive';
+    }
+    return false;
+  }).length;
+  
+  const highRiskAnalyses = analyses.filter(a => {
+    // Handle both data structures
+    if (a.analysis && a.analysis.riskLevel) {
+      return a.analysis.riskLevel === 'High';
+    }
+    // For database structure, check if risk level exists
+    if (a.metrics && a.metrics.riskLevel) {
+      return a.metrics.riskLevel === 'High';
+    }
+    return false;
+  }).length;
+  
+  const totalActionItems = analyses.reduce((sum, a) => {
+    // Handle both data structures
+    if (a.analysis && a.analysis.actionItems) {
+      return sum + a.analysis.actionItems.length;
+    }
+    // For database structure, check if action items exist in insights
+    if (a.insights && Array.isArray(a.insights)) {
+      return sum + a.insights.length;
+    }
+    return sum;
+  }, 0);
 
   return (
     <Box sx={{ backgroundColor: colors.background.default, minHeight: '100vh', py: 4 }}>
@@ -556,7 +684,7 @@ export default function StatsSection() {
                       onClick={() => handleAnalysisCardClick(analysis)}
                       sx={{ cursor: 'pointer' }}
                     >
-                      <AnalysisCard analysis={analysis} />
+                      <AnalysisCard analysis={analysis} onDelete={handleDeleteAnalysis} />
                     </Box>
                   </Grid>
                 ))
@@ -611,6 +739,28 @@ export default function StatsSection() {
         open={isFilterModalOpen}
         onClose={handleCloseFilterModal}
       />
+
+      <Dialog
+        open={isDeleteDialogOpen}
+        onClose={handleCancelDelete}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography id="delete-dialog-description">
+            Are you sure you want to delete this analysis? This action cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

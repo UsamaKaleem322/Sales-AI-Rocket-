@@ -124,3 +124,4 @@ jspm_packages/
 
 # Analysis database
 analyses.db
+/generated/prisma
