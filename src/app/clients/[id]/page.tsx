@@ -518,10 +518,11 @@ export default function ClientDetailPage() {
   const { analyses } = useAnalysisStore();
 
   // Get analyses for this specific client (you could pass client ID as param)
-  const clientAnalyses = analyses.filter(analysis => 
-    analysis.client.toLowerCase().includes('techcorp') || 
-    analysis.client.toLowerCase().includes('techstart')
-  );
+  const clientAnalyses = analyses.filter(analysis => {
+    const client = analysis.client || analysis.title?.split(' - ')[0] || '';
+    return client.toLowerCase().includes('techcorp') || 
+           client.toLowerCase().includes('techstart');
+  });
 
   const renderContent = () => {
     switch (activeTab) {

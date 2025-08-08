@@ -7,6 +7,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(TEAM_MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Client {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  company   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("clients")
+}
+
+enum Role {
+  ADMIN
+  TEAM_MEMBER
+}
+
 model Analysis {
   id              String   @id @default(cuid())
   type            String   // 'sales' | 'performance' | 'market' | 'customer'
@@ -15,6 +44,10 @@ model Analysis {
   insights        String   // JSON string for insights array
   recommendations String   // JSON string for recommendations array
   metrics         String   // JSON string for metrics object
+  teamMember      String?  // Add team member field
+  client          String?  // Add client field
+  transcription   String?  // Add transcription field
+  timestamp       DateTime? // Add timestamp field
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

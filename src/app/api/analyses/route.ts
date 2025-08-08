@@ -12,6 +12,10 @@ export async function GET(request: NextRequest) {
       trend: searchParams.get('trend') || undefined,
       dateFrom: searchParams.get('dateFrom') || undefined,
       dateTo: searchParams.get('dateTo') || undefined,
+      sentiment: searchParams.get('sentiment') || undefined,
+      riskLevel: searchParams.get('riskLevel') || undefined,
+      teamMember: searchParams.get('teamMember') || undefined,
+      client: searchParams.get('client') || undefined,
     };
 
     // Check if any filters are applied
@@ -42,9 +46,9 @@ export async function POST(request: NextRequest) {
     const analysisResponse: AnalysisResponse = {
       id: analysisData.id || `analysis_${Date.now()}`,
       type: analysisData.type || 'meeting',
-      title: analysisData.title || analysisData.client || 'Meeting Analysis',
+      title: analysisData.title || `${analysisData.client || 'Unknown Client'} - ${analysisData.teamMember || 'Unknown Team Member'}`,
       summary: Array.isArray(analysisData.analysis?.summary) 
-        ? analysisData.analysis.summary.join(' | ') 
+        ? analysisData.analysis.summary.join('\n') 
         : analysisData.analysis?.summary || analysisData.summary || 'Analysis completed',
       insights: analysisData.analysis?.actionItems || analysisData.analysis?.insights || analysisData.insights || [],
       recommendations: analysisData.analysis?.recommendations || analysisData.recommendations || [],

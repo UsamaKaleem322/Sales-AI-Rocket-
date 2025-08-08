@@ -21,7 +21,8 @@ import BusinessIcon from '@mui/icons-material/Business';
 import DescriptionIcon from '@mui/icons-material/Description';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import { colors } from '@/styles/colors';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
 interface AddAnalysisModalProps {
   open: boolean;
@@ -29,19 +30,18 @@ interface AddAnalysisModalProps {
   onAnalysisComplete?: (analysis: any) => void;
 }
 
-const clients = [
-  'Acme Corporation',
-  'TechStart Inc',
-  'Global Solutions',
-  'Innovative Systems',
-];
+interface Client {
+  id: string;
+  name: string;
+  email?: string;
+  company?: string;
+}
 
-const teamMembers = [
-  'Sarah Chen',
-  'Mike Johnson',
-  'John Smith',
-  'Emily Davis',
-];
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+}
 
 const CustomSelect = ({ label, icon: Icon, value, onChange, options }: any) => (
   <Box>
@@ -105,9 +105,9 @@ const CustomSelect = ({ label, icon: Icon, value, onChange, options }: any) => (
         return selected;
       }}
     >
-      {options.map((option: string) => (
-        <MenuItem key={option} value={option}>
-          {option}
+      {options.map((option: any) => (
+        <MenuItem key={option.id || option} value={option.name || option}>
+          {option.name || option}
         </MenuItem>
       ))}
     </Select>
@@ -115,15 +115,69 @@ const CustomSelect = ({ label, icon: Icon, value, onChange, options }: any) => (
 );
 
 export const AddAnalysisModal = ({ open, onClose, onAnalysisComplete }: AddAnalysisModalProps) => {
+  const { data: session } = useSession();
   const [selectedClient, setSelectedClient] = useState('');
   const [selectedTeamMember, setSelectedTeamMember] = useState('');
   const [transcription, setTranscription] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
+  const [clients, setClients] = useState<Client[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const isAdmin = session?.user?.role === 'ADMIN';
+  const currentUser = session?.user;
+
+  // Load clients and team members on modal open
+  useEffect(() => {
+    if (open) {
+      loadData();
+    }
+  }, [open]);
+
+  // Set current user as team member if not admin
+  useEffect(() => {
+    if (!isAdmin && currentUser) {
+      setSelectedTeamMember(currentUser.name);
+    }
+  }, [isAdmin, currentUser]);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      // Load clients
+      const clientsResponse = await fetch('/api/clients');
+      if (clientsResponse.ok) {
+        const clientsData = await clientsResponse.json();
+        setClients(clientsData);
+      }
+
+      // Load team members (only for admin)
+      if (isAdmin) {
+        const teamMembersResponse = await fetch('/api/team-members');
+        if (teamMembersResponse.ok) {
+          const teamMembersData = await teamMembersResponse.json();
+          setTeamMembers(teamMembersData);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAnalyze = async () => {
-    if (!selectedClient || !selectedTeamMember || !transcription.trim()) {
-      setError('Please fill in all fields');
+    if (!selectedClient || !transcription.trim()) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    // For team members, use their name as team member
+    const teamMemberName = isAdmin ? selectedTeamMember : currentUser?.name;
+
+    if (!teamMemberName) {
+      setError('Team member is required');
       return;
     }
 
@@ -138,7 +192,7 @@ export const AddAnalysisModal = ({ open, onClose, onAnalysisComplete }: AddAnaly
         },
         body: JSON.stringify({
           client: selectedClient,
-          teamMember: selectedTeamMember,
+          teamMember: teamMemberName,
           transcription: transcription.trim(),
         }),
       });
@@ -153,7 +207,7 @@ export const AddAnalysisModal = ({ open, onClose, onAnalysisComplete }: AddAnaly
       if (onAnalysisComplete) {
         onAnalysisComplete({
           client: selectedClient,
-          teamMember: selectedTeamMember,
+          teamMember: teamMemberName,
           transcription: transcription.trim(),
           analysis: data.analysis,
           timestamp: data.timestamp,
@@ -302,13 +356,15 @@ export const AddAnalysisModal = ({ open, onClose, onAnalysisComplete }: AddAnaly
             options={clients}
           />
 
-          <CustomSelect
-            label="Team Member"
-            icon={PersonIcon}
-            value={selectedTeamMember}
-            onChange={(e: any) => setSelectedTeamMember(e.target.value)}
-            options={teamMembers}
-          />
+          {isAdmin && (
+            <CustomSelect
+              label="Team Member"
+              icon={PersonIcon}
+              value={selectedTeamMember}
+              onChange={(e: any) => setSelectedTeamMember(e.target.value)}
+              options={teamMembers}
+            />
+          )}
 
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -359,7 +415,7 @@ export const AddAnalysisModal = ({ open, onClose, onAnalysisComplete }: AddAnaly
             fullWidth
             variant="contained"
             onClick={handleAnalyze}
-            disabled={isAnalyzing || !selectedClient || !selectedTeamMember || !transcription.trim()}
+            disabled={isAnalyzing || !selectedClient || !transcription.trim()}
             sx={{
               mt: 2,
               py: 1.5,

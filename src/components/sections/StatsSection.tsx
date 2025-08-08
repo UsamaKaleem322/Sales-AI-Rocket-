@@ -34,13 +34,17 @@ import {
   TrendingDown as TrendingDownIcon,
   Delete as DeleteIcon,
   Chat as ChatIcon,
+  Assessment as AssessmentIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAnalysisStore, AnalysisResult } from '@/lib/store';
 import { colors } from '@/styles/colors';
 import { AddAnalysisModal } from '@/components/dashboard/AddAnalysisModal';
 import { FilterModal } from '@/components/dashboard/FilterModal';
+import { ClientManagementModal } from '@/components/dashboard/ClientManagementModal';
+import { AnalyticsSection } from './AnalyticsSection';
 import { useEffect } from 'react';
 
 // StatCard component
@@ -181,7 +185,11 @@ const TeamMemberCard = ({ name, role, performance, meetings, healthScore, trend 
 );
 
 // AnalysisCard component
-const AnalysisCard = ({ analysis, onDelete }: { analysis: AnalysisResult; onDelete?: (id: string) => void }) => {
+const AnalysisCard = ({ analysis, onDelete, isTeamView = false }: { 
+  analysis: AnalysisResult; 
+  onDelete?: (id: string) => void;
+  isTeamView?: boolean;
+}) => {
   const router = useRouter();
   
   // Handle both data structures
@@ -189,8 +197,11 @@ const AnalysisCard = ({ analysis, onDelete }: { analysis: AnalysisResult; onDele
   const healthScore = analysis.analysis?.healthScore || analysis.metrics?.score || 0;
   const riskLevel = analysis.analysis?.riskLevel || analysis.metrics?.riskLevel || 'Low';
   const summary = analysis.analysis?.summary || analysis.insights || [];
-  const client = analysis.client || analysis.title || 'Unknown Client';
-  const teamMember = analysis.teamMember || 'Unknown Team Member';
+  
+  // Extract client and team member from title or use fallbacks
+  const titleParts = analysis.title?.split(' - ') || [];
+  const client = analysis.client || titleParts[0] || 'Unknown Client';
+  const teamMember = analysis.teamMember || titleParts[1] || 'Unknown Team Member';
   const timestamp = analysis.timestamp || analysis.createdAt || new Date().toISOString();
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -209,6 +220,9 @@ const AnalysisCard = ({ analysis, onDelete }: { analysis: AnalysisResult; onDele
     <Paper
       sx={{
         p: 3,
+        height: 360, // Increased height to prevent content cutoff
+        display: 'flex',
+        flexDirection: 'column',
         background: `linear-gradient(135deg, ${alpha(colors.background.paper, 0.8)} 0%, ${alpha(colors.background.paper, 0.6)} 100%)`,
         border: `1px solid ${alpha(colors.grey[700], 0.2)}`,
         borderRadius: 3,
@@ -222,7 +236,7 @@ const AnalysisCard = ({ analysis, onDelete }: { analysis: AnalysisResult; onDele
       }}
       onClick={handleCardClick}
     >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AnalyticsIcon sx={{ color: colors.primary.main, fontSize: 20 }} />
           <Box>
@@ -252,7 +266,7 @@ const AnalysisCard = ({ analysis, onDelete }: { analysis: AnalysisResult; onDele
               fontWeight: 500,
             }}
           />
-          {onDelete && (
+          {onDelete && !isTeamView && (
             <IconButton
               size="small"
               onClick={handleDelete}
@@ -270,7 +284,7 @@ const AnalysisCard = ({ analysis, onDelete }: { analysis: AnalysisResult; onDele
         </Box>
       </Box>
 
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 2, flexShrink: 0 }}>
         <Typography variant="body2" color="text.secondary" gutterBottom>
           Health Score
         </Typography>
@@ -291,21 +305,41 @@ const AnalysisCard = ({ analysis, onDelete }: { analysis: AnalysisResult; onDele
         </Box>
       </Box>
         
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 2, flex: 1, minHeight: 0 }}>
         <Typography variant="body2" color="text.secondary" gutterBottom>
           Key Points
         </Typography>
-        <Typography variant="body2" color="text.primary" sx={{ mb: 1 }}>
-          {Array.isArray(summary) && summary.length > 0 ? summary[0] : 'No summary available'}
-        </Typography>
-        {Array.isArray(summary) && summary.length > 1 && (
-          <Typography variant="body2" color="text.secondary">
-            +{summary.length - 1} more points
+        {Array.isArray(summary) && summary.length > 0 ? (
+          <Box>
+            <Typography 
+              variant="body2" 
+              color="text.primary" 
+              sx={{ 
+                mb: 1,
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                lineHeight: 1.4,
+              }}
+            >
+              {summary[0]}
+            </Typography>
+            {summary.length > 1 && (
+              <Typography variant="body2" color="text.secondary">
+                +{summary.length - 1} more points
+              </Typography>
+            )}
+          </Box>
+        ) : (
+          <Typography variant="body2" color="text.primary" sx={{ mb: 1 }}>
+            No summary available
           </Typography>
         )}
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AccessTimeIcon sx={{ color: 'text.secondary', fontSize: 16 }} />
           <Typography variant="body2" color="text.secondary">
@@ -370,19 +404,40 @@ const teamMembers = [
   },
 ];
 
-export default function StatsSection() {
+interface StatsSectionProps {
+  isTeamView?: boolean;
+  currentUser?: any;
+}
+
+export default function StatsSection({ isTeamView = false, currentUser }: StatsSectionProps) {
   const router = useRouter();
   const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [analysisToDelete, setAnalysisToDelete] = useState<string | null>(null);
-  const [view, setView] = useState('team');
+  const [view, setView] = useState(isTeamView ? 'analysis' : 'overview');
   const { addAnalysis, analyses, loadAnalyses, isLoading, error, filters, deleteAnalysis } = useAnalysisStore();
+  
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   // Load analyses on component mount
   useEffect(() => {
     loadAnalyses();
   }, [loadAnalyses]);
+
+  // Filter analyses based on team view
+  const filteredAnalyses = useMemo(() => {
+    if (isTeamView && currentUser) {
+      // For team view, only show analyses for the current user
+      return analyses.filter(analysis => {
+        const titleParts = analysis.title?.split(' - ') || [];
+        const teamMember = analysis.teamMember || titleParts[1] || '';
+        return teamMember.toLowerCase().includes(currentUser.name?.toLowerCase() || '');
+      });
+    }
+    return analyses;
+  }, [analyses, isTeamView, currentUser]);
 
   const handleOpenAnalysisModal = () => {
     setIsAnalysisModalOpen(true);
@@ -400,12 +455,20 @@ export default function StatsSection() {
     setIsFilterModalOpen(false);
   };
 
+  const handleOpenClientModal = () => {
+    setIsClientModalOpen(true);
+  };
+
+  const handleCloseClientModal = () => {
+    setIsClientModalOpen(false);
+  };
+
   const handleAnalysisComplete = async (analysisData: any) => {
     // Add the analysis to the store (which will save to database)
     const analysisResult: AnalysisResult = {
       id: Date.now().toString(),
       type: 'meeting', // Add required type field
-      title: analysisData.client || 'Meeting Analysis', // Add required title field
+      title: `${analysisData.client || 'Unknown Client'} - ${analysisData.teamMember || 'Unknown Team Member'}`, // Format: "Client - Team Member"
       client: analysisData.client,
       teamMember: analysisData.teamMember,
       transcription: analysisData.transcription,
@@ -459,9 +522,9 @@ export default function StatsSection() {
     setView(newValue);
   };
 
-  // Calculate dashboard stats from real data
-  const totalAnalyses = analyses.length;
-  const positiveAnalyses = analyses.filter(a => {
+  // Calculate dashboard stats from filtered data
+  const totalAnalyses = filteredAnalyses.length;
+  const positiveAnalyses = filteredAnalyses.filter(a => {
     // Handle both data structures
     if (a.analysis && a.analysis.sentiment) {
       return a.analysis.sentiment === 'positive';
@@ -473,7 +536,7 @@ export default function StatsSection() {
     return false;
   }).length;
   
-  const highRiskAnalyses = analyses.filter(a => {
+  const highRiskAnalyses = filteredAnalyses.filter(a => {
     // Handle both data structures
     if (a.analysis && a.analysis.riskLevel) {
       return a.analysis.riskLevel === 'High';
@@ -485,7 +548,7 @@ export default function StatsSection() {
     return false;
   }).length;
   
-  const totalActionItems = analyses.reduce((sum, a) => {
+  const totalActionItems = filteredAnalyses.reduce((sum, a) => {
     // Handle both data structures
     if (a.analysis && a.analysis.actionItems) {
       return sum + a.analysis.actionItems.length;
@@ -504,47 +567,78 @@ export default function StatsSection() {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
             <Box>
               <Typography variant="h4" sx={{ color: 'text.primary', mb: 1, fontWeight: 600 }}>
-                Dashboard
+                {isTeamView ? 'My Analysis Dashboard' : 'Dashboard'}
         </Typography>
               <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                Monitor team performance and analysis insights
+                {isTeamView ? 'View and manage your analysis insights' : 'Monitor team performance and analysis insights'}
         </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-              <Tabs 
-                value={view} 
-                onChange={handleViewChange}
-                sx={{
-                  minHeight: 40,
-                  '& .MuiTabs-indicator': {
-                    backgroundColor: '#4caf50',
-                  },
-                  '& .MuiTab-root': {
-                    textTransform: 'none',
-                    fontSize: '0.95rem',
-                    fontWeight: 500,
-                    color: 'text.secondary',
+              {!isTeamView ? (
+                <Tabs 
+                  value={view} 
+                  onChange={handleViewChange}
+                  sx={{
                     minHeight: 40,
-                    padding: '8px 16px',
-                    '&.Mui-selected': {
-                      color: '#4caf50',
+                    '& .MuiTabs-indicator': {
+                      backgroundColor: '#4caf50',
                     },
-                  },
-                }}
-              >
-                <Tab 
-                  icon={<PeopleIcon sx={{ fontSize: 20, mr: 1 }} />}
-                  iconPosition="start"
-                  label="Team View" 
-                  value="team" 
-                />
-                <Tab 
-                  icon={<AnalyticsIcon sx={{ fontSize: 20, mr: 1 }} />}
-                  iconPosition="start"
-                  label="Analysis View" 
-                  value="analysis" 
-                />
-              </Tabs>
+                    '& .MuiTab-root': {
+                      textTransform: 'none',
+                      fontSize: '0.95rem',
+                      fontWeight: 500,
+                      color: 'text.secondary',
+                      minHeight: 40,
+                      padding: '8px 16px',
+                      '&.Mui-selected': {
+                        color: '#4caf50',
+                      },
+                    },
+                  }}
+                >
+                  <Tab 
+                    icon={<PeopleIcon sx={{ fontSize: 20, mr: 1 }} />}
+                    iconPosition="start"
+                    label="Team View" 
+                    value="team" 
+                  />
+                  <Tab 
+                    icon={<AnalyticsIcon sx={{ fontSize: 20, mr: 1 }} />}
+                    iconPosition="start"
+                    label="Analysis View" 
+                    value="analysis" 
+                  />
+                  <Tab 
+                    icon={<AssessmentIcon sx={{ fontSize: 20, mr: 1 }} />}
+                    iconPosition="start"
+                    label="Analytics" 
+                    value="analytics" 
+                  />
+                </Tabs>
+              ) : (
+                <Typography variant="h6" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                  My Analysis View
+                </Typography>
+              )}
+              {isAdmin && (
+                <Button
+                  variant="outlined"
+                  startIcon={<BusinessIcon />}
+                  onClick={handleOpenClientModal}
+                  sx={{
+                    borderColor: alpha(colors.primary.main, 0.3),
+                    color: colors.primary.main,
+                    textTransform: 'none',
+                    px: 3,
+                    '&:hover': {
+                      borderColor: colors.primary.main,
+                      backgroundColor: alpha(colors.primary.main, 0.1),
+                    },
+                  }}
+                >
+                  Manage Clients
+                </Button>
+              )}
               <Button
                 variant="contained"
                 startIcon={<PersonAddIcon />}
@@ -573,7 +667,7 @@ export default function StatsSection() {
 
           <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
             <TextField
-              placeholder={view === 'team' ? "Search team members..." : "Search analyses..."}
+              placeholder={isTeamView ? "Search my analyses..." : (view === 'team' ? "Search team members..." : "Search analyses...")}
               variant="outlined"
               fullWidth
               InputProps={{
@@ -675,16 +769,26 @@ export default function StatsSection() {
             </Grid>
           ))}
         </Grid>
+          ) : view === 'analytics' ? (
+            <AnalyticsSection />
           ) : (
             <Grid container spacing={3}>
-              {analyses.length > 0 ? (
-                analyses.map((analysis) => (
-                  <Grid item xs={12} sm={6} md={3} key={analysis.id}>
+              {filteredAnalyses.length > 0 ? (
+                filteredAnalyses.map((analysis) => (
+                  <Grid item xs={12} sm={6} md={4} lg={3} key={analysis.id}>
                     <Box
                       onClick={() => handleAnalysisCardClick(analysis)}
-                      sx={{ cursor: 'pointer' }}
+                      sx={{ 
+                        cursor: 'pointer',
+                        height: '100%',
+                        display: 'flex',
+                      }}
                     >
-                      <AnalysisCard analysis={analysis} onDelete={handleDeleteAnalysis} />
+                      <AnalysisCard 
+                        analysis={analysis} 
+                        onDelete={isAdmin ? handleDeleteAnalysis : undefined} 
+                        isTeamView={isTeamView}
+                      />
                     </Box>
                   </Grid>
                 ))
@@ -738,6 +842,11 @@ export default function StatsSection() {
       <FilterModal
         open={isFilterModalOpen}
         onClose={handleCloseFilterModal}
+      />
+
+      <ClientManagementModal
+        open={isClientModalOpen}
+        onClose={handleCloseClientModal}
       />
 
       <Dialog

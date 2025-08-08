@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import StatsSection from '@/components/sections/StatsSection';
 
-export default function Home() {
+export default function TeamPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
@@ -18,10 +18,9 @@ export default function Home() {
       return;
     }
 
-    // Redirect team members to team view
-    if (session.user?.role === 'TEAM_MEMBER') {
-      router.push('/team');
-      return;
+    // Redirect admin users to main dashboard
+    if (session.user?.role === 'ADMIN') {
+      router.push('/');
     }
   }, [session, status, router]);
 
@@ -39,7 +38,7 @@ export default function Home() {
 
   return (
     <Layout>
-      <StatsSection isTeamView={false} currentUser={session.user} />
+      <StatsSection isTeamView={true} currentUser={session.user} />
     </Layout>
   );
 }

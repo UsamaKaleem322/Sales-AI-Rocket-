@@ -1,12 +1,30 @@
 'use client';
 
-import { Box, IconButton, Typography, Button } from '@mui/material';
+import { Box, IconButton, Typography, Button, Menu, MenuItem } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import PersonIcon from '@mui/icons-material/Person';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import { colors } from '@/styles/colors';
 
 export const Header = () => {
+  const { data: session } = useSession();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/auth/signin' });
+  };
+
   return (
     <Box
       component="header"
@@ -55,6 +73,7 @@ export const Header = () => {
         </IconButton>
         <Button
           startIcon={<PersonIcon />}
+          onClick={handleMenuClick}
           sx={{
             color: 'text.primary',
             textTransform: 'none',
@@ -63,8 +82,38 @@ export const Header = () => {
             },
           }}
         >
-          Admin
+          {session?.user?.name || 'User'}
         </Button>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          <MenuItem onClick={handleMenuClose}>
+            <Typography variant="body2">
+              {session?.user?.email}
+            </Typography>
+          </MenuItem>
+          <MenuItem onClick={handleMenuClose}>
+            <Typography variant="body2" color="text.secondary">
+              Role: {session?.user?.role}
+            </Typography>
+          </MenuItem>
+          <MenuItem onClick={handleLogout}>
+            <LogoutIcon sx={{ mr: 1, fontSize: 20 }} />
+            <Typography variant="body2">
+              Sign Out
+            </Typography>
+          </MenuItem>
+        </Menu>
       </Box>
     </Box>
   );

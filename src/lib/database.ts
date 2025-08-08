@@ -25,10 +25,14 @@ class PrismaDatabase {
         id: analysis.id,
         type: analysis.type,
         title: analysis.title,
-        summary: Array.isArray(analysis.summary) ? analysis.summary.join(' | ') : analysis.summary,
+        summary: Array.isArray(analysis.summary) ? analysis.summary.join('\n') : analysis.summary,
         insights: JSON.stringify(analysis.insights || []),
         recommendations: JSON.stringify(analysis.recommendations || []),
         metrics: JSON.stringify(analysis.metrics || { score: 0, trend: 'stable', confidence: 0 }),
+        teamMember: (analysis as any).teamMember || null,
+        client: (analysis as any).client || null,
+        transcription: (analysis as any).transcription || null,
+        timestamp: (analysis as any).timestamp || null,
         createdAt: analysis.createdAt,
       },
     });
@@ -51,10 +55,14 @@ class PrismaDatabase {
       id: analysis.id,
       type: analysis.type as any,
       title: analysis.title,
-      summary: analysis.summary.includes(' | ') ? analysis.summary.split(' | ') : [analysis.summary],
+      summary: analysis.summary.includes('\n') ? analysis.summary.split('\n') : [analysis.summary],
       insights: JSON.parse(analysis.insights),
       recommendations: JSON.parse(analysis.recommendations),
       metrics: JSON.parse(analysis.metrics),
+      teamMember: analysis.teamMember,
+      client: analysis.client,
+      transcription: analysis.transcription,
+      timestamp: analysis.timestamp,
       createdAt: analysis.createdAt,
     }));
   }
@@ -198,6 +206,24 @@ export const getAnalysesByFilter = async (filters: any) => {
     
     // Trend filtering
     if (filters.trend && analysis.metrics.trend !== filters.trend) return false;
+    
+    // Sentiment filtering
+    if (filters.sentiment && analysis.metrics.sentiment !== filters.sentiment) return false;
+    
+    // Risk level filtering
+    if (filters.riskLevel && analysis.metrics.riskLevel !== filters.riskLevel) return false;
+    
+    // Team member filtering (extract from title)
+    if (filters.teamMember) {
+      const teamMember = analysis.title?.split(' - ')[1] || '';
+      if (!teamMember.toLowerCase().includes(filters.teamMember.toLowerCase())) return false;
+    }
+    
+    // Client filtering (extract from title)
+    if (filters.client) {
+      const client = analysis.title?.split(' - ')[0] || '';
+      if (!client.toLowerCase().includes(filters.client.toLowerCase())) return false;
+    }
     
     return true;
   });
